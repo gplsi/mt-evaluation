@@ -1,0 +1,25 @@
+evaluation_name: "ALIA_instruction_TA_random_v1"
+description: "Configuration file for evaluation of base_llm_Models"
+
+
+models:
+  local: True # Set to True if the model is hosted locally of False if it is evlauated from huggingface
+  models_names: step-004040,step-008080,step-012120,step-016160,step-020200,step-024240,final  # List of models nambes to be evaluated step-004040,step-008080,step-012120,
+  models_path: /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_instruction_TA_random_v1/hf_models # List of paths to the models to be evaluated
+
+evaluation:
+  evaluation_folder: /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_instruction_TA_random_v1/evaluaciones # Path to the folder where the evlaluation results will be stored
+  evaluation_folder_gold: /home/gplsi/GPLSI/ALIA/modelos/Evaluation/InstructionTA/gold # Path where results of other evaluations are stored to be included in the final evaluation
+  instruct: False
+  shots: 0 # Number of shots to be used in the evaluation
+  src_language: va
+  tgt_language: es
+  prompt_style: salamandra_instruct
+
+wandb_project: "ALIA_instruction_TA_random_v1_evaluation" # Name of the wandb project to log the results
+
+languages:
+  - Spanish: True # Set to true if want to evaluate the model in Spanish tasks
+  - English: True # Set to true if want to evaluate the model in English tasks
+  - Valencian: False # Set to true if want to evaluate the model in Valencian tasks
+  - Catalan: True # Set to true if want to evaluate the model in Catalan tasks

@@ -50,7 +50,8 @@ ISO639_3_SCRIPT_TO_NAME = {
     'vec_Latn': 'Venetian', 'vie_Latn': 'Vietnamese', 'war_Latn': 'Waray', 'wol_Latn': 'Wolof',
     'xho_Latn': 'Xhosa', 'ydd_Hebr': 'Eastern Yiddish', 'yor_Latn': 'Yoruba', 'yue_Hant': 'Yue Chinese',
     'zho_Hans': 'Chinese (Simplified)', 'zho_Hant': 'Chinese (Traditional)', 'zsm_Latn': 'Standard Malay', 'zul_Latn': 'Zulu',
-    'arn_Latn':'Aranese', 'arg_Latn':'Aragonese'
+    'arn_Latn':'Aranese', 'arg_Latn':'Aragonese',
+    'va': 'Valencian'
 }
 
 ISO639_3_SCRIPT_TO_SALAMANDRATA7B = {

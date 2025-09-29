@@ -1,0 +1,22 @@
+evaluation_name: "<<model_name>>_evaluation"
+description: "Configuration file for evaluation of instruction-following models."
+
+
+models:
+  local: True # Set to True if the model is hosted locally of False if it is evlauated from huggingface
+  models_names: "<<model_name_1>>,<<model_name_2>>" # List of models nambes to be evaluated
+  models_path: "<<path_to_models_folder>>" # List of paths to the models to be evaluated
+
+evaluation:
+  evaluation_folder: "<<path_to_evaluation_folder>>" # Path to the folder where the evlaluation results will be stored
+  evaluation_folder_gold: "<<gold_evaluations>>" # Path where results of other evaluations are stored to be included in the final evaluation
+  instruct: True
+  shots: 0 # Number of shots to be used in the evaluation
+
+wandb_project: "<<wandb_project_name>>" # Name of the wandb project to log the results
+
+languages:
+  - Spanish: true # Set to true if want to evaluate the model in Spanish tasks
+  - English: true # Set to true if want to evaluate the model in English tasks
+  - Valencian: true # Set to true if want to evaluate the model in Valencian tasks
+  - Catalan: true # Set to true if want to evaluate the model in Catalan tasks

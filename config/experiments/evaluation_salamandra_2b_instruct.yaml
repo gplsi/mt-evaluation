@@ -1,0 +1,25 @@
+evaluation_name: "HuggingFace Salamandra-Instruct for evaluation"
+description: "Salamandra Translation Evaluation"
+
+
+models:
+  local: True # Set to True if the model is hosted locally of False if it is evlauated from huggingface
+  models_names: salamandra-2b-instruct  # List of models nambes to be evaluated
+  models_path: /home/gplsi/GPLSI/ALIA/modelos/Instruction/Salamandra_2B_Instruct_BSC # List of paths to the models to be evaluated
+
+evaluation:
+  evaluation_folder: /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_instruction_TA_random_v1/evaluaciones # Path to the folder where the evlaluation results will be stored
+  evaluation_folder_gold: /home/gplsi/GPLSI/ALIA/modelos/Evaluation/Continual/gold # Path where results of other evaluations are stored to be included in the final evaluation
+  instruct: False
+  shots: 0 # Number of shots to be used in the evaluation
+  src_language: va
+  tgt_language: es
+  prompt_style: salamandra_instruct
+
+wandb_project: "Salamantra_instruct_TA_evaluation" # Name of the wandb project to log the results
+
+languages:
+  - Spanish: False # Set to true if want to evaluate the model in Spanish tasks
+  - English: False # Set to true if want to evaluate the model in English tasks
+  - Valencian: True # Set to true if want to evaluate the model in Valencian tasks
+  - Catalan: False # Set to true if want to evaluate the model in Catalan tasks

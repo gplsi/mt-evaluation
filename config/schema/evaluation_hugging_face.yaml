@@ -1,0 +1,21 @@
+evaluation_name: "HuggingFace evaluation"
+description: "Configuration file for evaluation of llm_Models that has to be done using Hugging Face"
+
+
+models:
+  local: False # Set to True if the model is hosted locally of False if it is evlauated from huggingface
+  models_names: "<<model_name_1>>,<<model_name_2>>" # List of hugging_face_id_names to be evaluated 
+
+evaluation:
+  evaluation_folder: "<<path_to_evaluation_folder>>" # Path to the folder where the evlaluation results will be stored
+  evaluation_folder_gold: "<<gold_evaluations>>" # Path where results of other evaluations are stored to be included in the final evaluation
+  instruct: False
+  shots: 5 # Number of shots to be used in the evaluation
+
+wandb_project: "<<wandb_project_name>>" # Name of the wandb project to log the results
+
+languages:
+  - Spanish: true # Set to true if want to evaluate the model in Spanish tasks
+  - English: true # Set to true if want to evaluate the model in English tasks
+  - Valencian: true # Set to true if want to evaluate the model in Valencian tasks
+  - Catalan: true # Set to true if want to evaluate the model in Catalan tasks

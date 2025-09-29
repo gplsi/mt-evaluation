@@ -3,7 +3,7 @@ from lm_eval import utils
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 import ctranslate2
-import pyonmttok
+#import pyonmttok
 import torch
 import os
 import shutil
@@ -34,10 +34,11 @@ class CTranslateMAIN(LM):
             eval_logger.info("Using CPU")
             self._model = ctranslate2.Translator(model)
         
-        self._tokenizer = pyonmttok.Tokenizer(
-            mode="none", 
-            sp_model_path=f"{model}/spm.model"
-        )
+        # self._tokenizer = pyonmttok.Tokenizer(
+        #     mode="none", 
+        #     sp_model_path=f"{model}/spm.model"
+        # )
+        self._tokenizer = None
 
     def generate_until(self, requests):
         res = []
