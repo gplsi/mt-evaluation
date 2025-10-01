@@ -32,3 +32,5 @@ reports
 *.out
 slurm/experiments/
 slurm/slurm
+log.txt
+cache/
