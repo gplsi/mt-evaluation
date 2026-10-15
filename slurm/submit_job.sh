@@ -2,6 +2,7 @@
 
 CONFIG_FILE=""
 DOCKER_MODE=false
+REPORT_ONLY=false
 GPU_COUNT=1
 PARTITION="dgx"
 MEMORY="32G"
@@ -10,13 +11,16 @@ MEMORY="32G"
 source /home/gplsi/rst29/anaconda3/etc/profile.d/conda.sh
 conda activate mt_3
 
-while getopts ":c:dg:m:p:" opt; do
+while getopts ":c:dg:m:p:r" opt; do
   case $opt in
     c)
       CONFIG_FILE="$OPTARG"
       ;;
     d)
       DOCKER_MODE=true
+      ;;
+    r)
+      REPORT_ONLY=true
       ;;
     g)
       GPU_COUNT="$OPTARG"
@@ -41,7 +45,8 @@ done
 # Check required -c argument
 if [[ -z "$CONFIG_FILE" ]]; then
   echo "Error: -c <config_file.yaml> is required"
-  echo "Usage: $0 -c <config_file.yaml> [-d] [-g <gpu_count>] [-m <memory>] [-p <partition>]"
+  echo "Usage: $0 -c <config_file.yaml> [-d] [-r] [-g <gpu_count>] [-m <memory>] [-p <partition>]"
+  echo "  -r  Only build the joint report from existing results (no evaluation, no SLURM job)"
   exit 1
 fi
 
@@ -51,6 +56,30 @@ JOB_ID=$(date +%Y%m%d_%H%M%S)_$$  # timestamp + process ID
 # Alternative: JOB_ID=$(uuidgen | cut -d- -f1)  # first part of UUID
 
 echo "Job ID: $JOB_ID"
+
+## REPORT ONLY: build the joint report locally from existing results and exit
+if [ "$REPORT_ONLY" = true ]; then
+  SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  FORMAT_RESULTS="${SCRIPT_DIR}/../launch_scripts/format_results.py"
+  if [ ! -f "$FORMAT_RESULTS" ]; then
+    echo "Error: format_results.py not found at $FORMAT_RESULTS" >&2
+    exit 1
+  fi
+
+  echo "Generating joint report from config: $CONFIG_FILE"
+  python3 generate_env.py --config "$CONFIG_FILE" --env-id "$JOB_ID" --report-only || exit 1
+
+  ENV_FILE=".env_$JOB_ID"
+  set -a
+  source "./$ENV_FILE"
+  set +a
+  rm -f "./$ENV_FILE"
+
+  python3 "$FORMAT_RESULTS" \
+    --evaluation_folder "$EVALUATION_FOLDER" \
+    --evaluation_folder_gold "$EVALUATION_FOLDER_GOLD"
+  exit $?
+fi
 
 ## GENERATING ENVIRONMENT FILE DOCKER
 if [ "$DOCKER_MODE" = true ]; then

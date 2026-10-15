@@ -11,8 +11,16 @@ def parse_arguments():
     parser.add_argument("--config", type=str, required=True, help="Path to the YAML configuration file")
     parser.add_argument("--env-id", type=str, required=True, help="Identifier for the enviroment file")
     parser.add_argument('--docker', action='store_true', help='Run in Docker mode')
+    parser.add_argument('--report-only', action='store_true',
+                        help='Only build the joint report: languages are not required')
 
     return parser.parse_args()
+
+
+def gold_folders(config):
+    """evaluation_folder_gold admite una ruta o una lista de rutas."""
+    gold = config['evaluation']['evaluation_folder_gold']
+    return [gold] if isinstance(gold, str) else list(gold)
 
 def read_config(config_path):
     with open(config_path, 'r') as file:
@@ -40,7 +48,7 @@ def generate_env_file(config, env_id, docker_mode):
         f"MODELS_TO_EVALUATE={models_names}",
         f"MODELS_FOLDER={config['models'].get('models_path','')}",
         f"EVALUATION_FOLDER={config['evaluation']['evaluation_folder']}",
-        f"EVALUATION_FOLDER_GOLD={config['evaluation']['evaluation_folder_gold']}",
+        f"EVALUATION_FOLDER_GOLD={','.join(gold_folders(config))}",
         f"WANDB_PROJECT={config['wandb_project']}",
         f"INSTRUCT_EVALUATION={str(config['evaluation']['instruct']).capitalize()}",
         f"SHOTS={config['evaluation']['shots']}",
@@ -113,7 +121,7 @@ def check_model_configuration(config,docker_mode):
             config['models']['models_names'] = models_list_str
 
 
-def check_evaluation_configuration(config):
+def check_evaluation_configuration(config, docker_mode=False):
     """Check if the evaluation configuration is valid"""
     # Check if evaluation configuration has all required fields
     required_fields = ['evaluation_folder', 'evaluation_folder_gold','instruct','shots']
@@ -130,9 +138,20 @@ def check_evaluation_configuration(config):
 
     if not os.path.exists(config['evaluation']['evaluation_folder']):
         raise ValueError(f"Evaluation folder does not exist: {config['evaluation']['evaluation_folder']}")
-    if not os.path.exists(config['evaluation']['evaluation_folder_gold']):
-        raise ValueError(f"Evaluation folder gold does not exist: {config['evaluation']['evaluation_folder_gold']}")
-    
+    gold = config['evaluation']['evaluation_folder_gold']
+    if not isinstance(gold, (str, list)) or (isinstance(gold, list) and not gold):
+        raise ValueError("evaluation_folder_gold must be a path or a non-empty list of paths")
+    for folder in gold_folders(config):
+        if not isinstance(folder, str):
+            raise ValueError(f"Evaluation folder gold must be a path: {folder}")
+        if "," in folder:
+            raise ValueError(f"Evaluation folder gold paths cannot contain commas: {folder}")
+        if not os.path.exists(folder):
+            raise ValueError(f"Evaluation folder gold does not exist: {folder}")
+    # Docker mounts a single gold volume
+    if docker_mode and len(gold_folders(config)) > 1:
+        raise ValueError("Docker mode supports a single evaluation_folder_gold; use conda mode to merge several folders")
+
 
 def check_languages_configuration(config):
     """Check if the languages configuration is valid"""
@@ -176,20 +195,22 @@ def check_languages_configuration(config):
 
 
         
-def check_config(config,docker_mode):
+def check_config(config,docker_mode,report_only=False):
     """Check if the config has all required fields"""
-    required_fields = [
-        'models', 'evaluation','languages' 
-    ]
+    required_fields = ['models', 'evaluation'] if report_only else ['models', 'evaluation', 'languages']
     for field in required_fields:
         if field not in config:
             raise ValueError(f"Missing required field in config: {field}")
-    
+
     # Check models configuration
     check_model_configuration(config,docker_mode)
-    check_evaluation_configuration(config)
-    check_languages_configuration(config)
-    
+    check_evaluation_configuration(config,docker_mode)
+    if report_only:
+        # Solo se genera el informe: los idiomas no hacen falta
+        config['languages'] = ''
+    else:
+        check_languages_configuration(config)
+
     if 'evaluation_folder' not in config['evaluation'] or 'evaluation_folder_gold' not in config['evaluation']:
         raise ValueError("Missing evaluation folder paths in evaluation configuration")
 
@@ -200,7 +221,7 @@ def main():
     docker_mode = args.docker
 
     print("Docker mode:", docker_mode)
-    check_config(config,docker_mode)
+    check_config(config,docker_mode,args.report_only)
     print(f"Generating environment file for: {config['evaluation_name']}")
     
     # Generate environment file from config

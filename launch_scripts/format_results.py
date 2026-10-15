@@ -134,32 +134,34 @@ def process_all_folders_combined(main_root_folder):
     """
     all_results = []
     all_configs = []
-    
-    for root_folder in os.listdir(main_root_folder):
-        root_path = os.path.join(main_root_folder, root_folder)
-        if os.path.isdir(root_path):
-            print(f"\n📂 Procesando carpeta raíz: {root_folder}")
-            for model_folder in os.listdir(root_path):
-                model_path = os.path.join(root_path, model_folder)
-                if os.path.isdir(model_path):
-                    print(f"  📁 Explorando modelo: {model_folder}")
-                    for results_folder in os.listdir(model_path):
-                        results_path = os.path.join(model_path, results_folder)
-                        if os.path.isdir(results_path):
-                            print(f"    📂 Carpeta de resultados: {results_folder}")
-                            for filename in os.listdir(results_path):
-                                if filename.startswith("results_") and filename.endswith(".json"):
-                                    file_path = os.path.join(results_path, filename)
-                                    results_list, config_list = process_file(file_path)
-                                    for r in results_list:
-                                        r["root_folder"] = root_folder
-                                        r["model_folder"] = model_folder
-                                    for c in config_list:
-                                        c["root_folder"] = root_folder
-                                        c["model_folder"] = model_folder
-                                    all_results.extend(results_list)
-                                    all_configs.extend(config_list)
-                                    
+
+    # Admite una carpeta o una lista de carpetas 'results/'
+    folders = [main_root_folder] if isinstance(main_root_folder, str) else list(main_root_folder)
+
+    # Estructura esperada: <root_folder>/[...]/<model_folder>/<results_folder>/results_*.json
+    # Se recorre a cualquier profundidad para admitir carpetas con niveles extra.
+    for base_folder in folders:
+        print(f"\n📂 Procesando carpeta de resultados: {base_folder}")
+        for dirpath, dirnames, filenames in os.walk(base_folder):
+            dirnames.sort()
+            for filename in sorted(filenames):
+                if not (filename.startswith("results_") and filename.endswith(".json")):
+                    continue
+                file_path = os.path.join(dirpath, filename)
+                parts = os.path.relpath(file_path, base_folder).split(os.sep)
+                if len(parts) < 4:
+                    continue
+                root_folder, model_folder = parts[0], parts[-3]
+                results_list, config_list = process_file(file_path)
+                for r in results_list:
+                    r["root_folder"] = root_folder
+                    r["model_folder"] = model_folder
+                for c in config_list:
+                    c["root_folder"] = root_folder
+                    c["model_folder"] = model_folder
+                all_results.extend(results_list)
+                all_configs.extend(config_list)
+
     df_results = pd.DataFrame(all_results)
     df_configs = pd.DataFrame(all_configs)
     return df_results, df_configs
@@ -285,9 +287,9 @@ def merge_dataframes(df_configs, df_results_pivot):
 ###
 # Función que genera una dataframe con los resultados unidos e enriquecidos.
 ###
-def generate_results(main_root_folder):
-    # Se procesan todas las carpetas y se extraen tanto resultados como configuraciones en una sola pasada
-    df_results, df_configs = process_all_folders_combined(main_root_folder)
+def generate_results(main_root_folders):
+    # Se procesan todas las carpetas (una o una lista) y se extraen resultados y configuraciones en una sola pasada
+    df_results, df_configs = process_all_folders_combined(main_root_folders)
     
     # Enriquecer ambos DataFrames con la información extraída del nombre del archivo
     if not df_results.empty:
@@ -379,16 +381,18 @@ def generate_results(main_root_folder):
 # Función para aplicar estilo
 #### -----------------------------------------------------------------------------
 def highlight_nsmallest_nlargest(s, n=N):
-    is_min = s.isin(s.nsmallest(n))  # Identifica los N valores más pequeños
-    is_max = s.isin(s.nlargest(n))   # Identifica los N valores más grandes
+    s_numeric = pd.to_numeric(s, errors='coerce')  # fuerza el tipo numérico real
+
+    is_min = s.isin(s_numeric.nsmallest(n))  # Identifica los N valores más pequeños
+    is_max = s.isin(s_numeric.nlargest(n))   # Identifica los N valores más grandes
 
     if s.name[1] == 'ter':
-        return ['background-color: lightcoral' if v else 
-                'background-color: lightgreen' if w else 
+        return ['background-color: lightcoral' if v else
+                'background-color: lightgreen' if w else
                 '' for v, w in zip(is_max, is_min)]
     else:
-        is_min = s.isin(s.nsmallest(n))  # Identifica los N valores más pequeños
-        is_max = s.isin(s.nlargest(n))   # Identifica los N valores más grandes
+        is_min = s.isin(s_numeric.nsmallest(n))  # Identifica los N valores más pequeños
+        is_max = s.isin(s_numeric.nlargest(n))   # Identifica los N valores más grandes
         return ['background-color: lightcoral' if v else 
                 'background-color: lightgreen' if w else 
                 '' for v, w in zip(is_min, is_max)]
@@ -471,33 +475,59 @@ def style_results(df,root_folder):
 
 
 
+def split_folders(values):
+    """
+    Admite rutas separadas por espacios (varios argumentos) o por comas
+    (formato usado en la variable EVALUATION_FOLDER_GOLD del .env).
+    """
+    folders = []
+    for value in values or []:
+        folders.extend(f.strip() for f in value.split(",") if f.strip())
+    return folders
+
+
+def resolve_results_folder(folder):
+    """
+    Devuelve la carpeta 'results/' a procesar. Acepta tanto la carpeta padre
+    (p. ej. .../evaluaciones) como la propia carpeta .../results.
+    """
+    candidate = os.path.join(folder, "results")
+    if os.path.isdir(candidate):
+        return candidate + "/"
+    if os.path.basename(os.path.normpath(folder)) == "results" and os.path.isdir(folder):
+        return os.path.normpath(folder) + "/"
+    return None
+
+
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Generar y estilizar resultados de evaluación de modelos.")
-    argparser.add_argument('--evaluation_folder', type=str, default="../results/",
-                           help="Ruta al directorio principal donde se encuentran los resultados.")
-    argparser.add_argument('--evaluation_folder_gold', type=str, default="../results/",
-                           help="Ruta al directorio principal donde se encuentran los mejores resultados.")
+    argparser.add_argument('--evaluation_folder', type=str, nargs='+', default=["../results/"],
+                           help="Una o varias rutas (o una lista separada por comas) con resultados a incluir. "
+                                "El informe se guarda en la primera, salvo que se indique --output_folder.")
+    argparser.add_argument('--evaluation_folder_gold', type=str, nargs='*', default=[],
+                           help="Una o varias rutas (o una lista separada por comas) con resultados de referencia a incluir.")
+    argparser.add_argument('--output_folder', type=str, default=None,
+                           help="Carpeta donde guardar el informe. Por defecto: <primera evaluation_folder>/reports/.")
     args = argparser.parse_args()
-    
-    main_root_folder = args.evaluation_folder + "/results/"
-    
-    main_root_folder_gold = args.evaluation_folder_gold + "/results/"
-    
-    if os.path.exists(main_root_folder_gold):
-        temp_folder = args.evaluation_folder + "/temp/"
-        # os.mkdir(temp_folder) if not os.path.exists(temp_folder) else None
-        shutil.copytree(main_root_folder_gold, temp_folder, dirs_exist_ok=True)
-        shutil.copytree(main_root_folder, temp_folder, dirs_exist_ok=True)
-        main_root_folder = temp_folder
-    else:
-        
-        print(f"❌ No se encontró la carpeta de resultados: {main_root_folder_gold}")
+
+    evaluation_folders = split_folders(args.evaluation_folder)
+    gold_folders = split_folders(args.evaluation_folder_gold)
+
+    # Ya no se copia todo a evaluaciones/temp/: cada carpeta se lee en su sitio.
+    root_folders = []
+    for folder in gold_folders + evaluation_folders:
+        results_folder = resolve_results_folder(folder)
+        if results_folder is None:
+            print(f"❌ No se encontró la carpeta de resultados: {folder}/results/")
+        elif results_folder not in root_folders:
+            root_folders.append(results_folder)
+
+    if not root_folders:
         exit(1)
-    
-    df = generate_results(main_root_folder)
-    if "temp" in main_root_folder:
-        shutil.rmtree(main_root_folder)
-    
-    results_folder = args.evaluation_folder + "/reports/"
-    os.mkdir(results_folder) if not os.path.exists(results_folder) else None
+
+    df = generate_results(root_folders)
+
+    results_folder = args.output_folder or os.path.join(evaluation_folders[0], "reports")
+    results_folder = results_folder.rstrip("/") + "/"
+    os.makedirs(results_folder, exist_ok=True)
     style_results(df,results_folder)
