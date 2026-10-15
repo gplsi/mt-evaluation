@@ -2,8 +2,8 @@
 #SBATCH --job-name=llm_evaluation_harness
 #SBATCH --output=%j.out
 #SBATCH --error=%j.err          
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16G                      
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=32G                      
 #SBATCH --partition=dgx       
 #SBATCH --gres=gpu:1
 
