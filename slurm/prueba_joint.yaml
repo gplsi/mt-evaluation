@@ -1,0 +1,17 @@
+evaluation_name: "prueba_joint_report_TA"
+
+models:
+  local: True
+  models_names: checkpoint-47673
+  models_path: /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_TA_random_v9_salamandraTA_100d
+
+evaluation:
+  evaluation_folder: /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_TA_random_v9_salamandraTA_100d/evaluaciones
+  evaluation_folder_gold:
+    - /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_TA_random_v9_salamandraTA_25d/evaluaciones
+    - /home/gplsi/GPLSI/ALIA/modelos/Instruction/ALIA_TA_random_v10_salamandraTA_25d/evaluaciones
+    - /home/gplsi/GPLSI/ALIA/modelos/Instruction/SalamandraTA_2B_Instruct_BSC/evaluaciones
+  instruct: True
+  shots: 0
+
+wandb_project: "prueba_joint_report_TA"

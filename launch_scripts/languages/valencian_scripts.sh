@@ -20,3 +20,7 @@ yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" NEWS_es-va $SHOTS Fal
 yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" NEWS_en-va $SHOTS False $WANDB 6_TA $INSTRUCT eng_Latn va $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/6_TA.txt" 2>&1 || true
 yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" NEWS_va-es $SHOTS False $WANDB 7_TA $INSTRUCT va spa_Latn $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/7_TA.txt" 2>&1 || true
 yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" NEWS_va-en $SHOTS False $WANDB 8_TA $INSTRUCT va eng_Latn $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/8_TA.txt" 2>&1 || true
+yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" ANOTACIONES_corregidas_es-va $SHOTS False $WANDB 9_TA $INSTRUCT spa_Latn va $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/9_TA.txt" 2>&1 || true
+yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" ANOTACIONES_corregidas_va-es $SHOTS False $WANDB 10_TA $INSTRUCT va spa_Latn $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/10_TA.txt" 2>&1 || true
+yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" ANOTACIONES_validadas_es-va $SHOTS False $WANDB 11_TA $INSTRUCT spa_Latn va $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/11_TA.txt" 2>&1 || true
+yes | ./launch_scripts/execute_task_love.sh "$MODEL_ROUTE" ANOTACIONES_validadas_va-es $SHOTS False $WANDB 12_TA $INSTRUCT va spa_Latn $PROMPT_STYLE > "$OUTPUT_MAIN_DIR/$OUTPUT_SUBFOLDER/12_TA.txt" 2>&1 || true
