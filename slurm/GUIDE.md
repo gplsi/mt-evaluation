@@ -32,7 +32,7 @@ tail -f ./experiments/<<EXPERMIENT_ID>>/<<JOB_ID_LM_EVALUATION_HARNESS>>.out
 * `-g`: GPU count (default: 2)
 * `-m`: Memory (default: 32G)
 * `-p`: Partition (default: **DGX**)
-
+* `-x`: Deletes `results/` and `reports/` from 'evaluation\_folder` before evaluation (asks for confirmation and never deletes gold)
 
 ## 🧰 Getting Started
 

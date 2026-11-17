@@ -4,14 +4,15 @@ CONFIG_FILE=""
 DOCKER_MODE=false
 REPORT_ONLY=false
 GPU_COUNT=1
-PARTITION="dgx"
+PARTITION="postiguet1"
 MEMORY="32G"
+CLEAN_RESULTS=false
 
 # ACTIVATE HARDNESS ENVIRONMENT
 source /home/gplsi/rst29/anaconda3/etc/profile.d/conda.sh
 conda activate mt_3
 
-while getopts ":c:dg:m:p:r" opt; do
+while getopts ":c:dg:m:p:rx" opt; do
   case $opt in
     c)
       CONFIG_FILE="$OPTARG"
@@ -31,6 +32,9 @@ while getopts ":c:dg:m:p:r" opt; do
     p)
       PARTITION="$OPTARG"
       ;;
+    x)
+      CLEAN_RESULTS=true
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -49,6 +53,13 @@ if [[ -z "$CONFIG_FILE" ]]; then
   echo "  -r  Only build the joint report from existing results (no evaluation, no SLURM job)"
   exit 1
 fi
+
+if [ "$CLEAN_RESULTS" = true ] && [ "$REPORT_ONLY" = true ]; then
+  echo "Error: -x (borrar resultados) no se puede combinar con -r (solo informe)" >&2
+  exit 1
+fi
+CLEAN_ARG=""
+[ "$CLEAN_RESULTS" = true ] && CLEAN_ARG="--clean-results"
 
 
 # Generate unique ID for this job
@@ -84,11 +95,11 @@ fi
 ## GENERATING ENVIRONMENT FILE DOCKER
 if [ "$DOCKER_MODE" = true ]; then
   echo "Generating environment file from config: $CONFIG_FILE and to be used in DOCKER mode"
-  python3 generate_env.py --config "$CONFIG_FILE" --env-id "$JOB_ID" --docker
+  python3 generate_env.py --config "$CONFIG_FILE" --env-id "$JOB_ID" --docker $CLEAN_ARG
 else
 ## GENERATION ENVIROMENT FILE FOR CONDA
   echo "Generating environment file from config: $CONFIG_FILE and to be used in CONDA mode"
-  python3 generate_env.py --config "$CONFIG_FILE" --env-id "$JOB_ID"
+  python3 generate_env.py --config "$CONFIG_FILE" --env-id "$JOB_ID" $CLEAN_ARG
 fi
 
 ENV_FILE=".env_$JOB_ID"
@@ -98,6 +109,14 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 echo "Environment file generated."
+if [ "$CLEAN_RESULTS" = true ]; then
+  EF=$(grep '^EVALUATION_FOLDER=' "$ENV_FILE" | cut -d= -f2-)
+  echo "ATENCIÓN: se borrarán $EF/results y $EF/reports al empezar el trabajo."
+  read -r -p "¿Continuar? [s/N] " resp
+  if [[ ! "$resp" =~ ^[sS]$ ]]; then
+    rm -f "$ENV_FILE"; echo "Cancelado."; exit 1
+  fi
+fi
 echo "Expermient: $JOB_ID"
 mkdir -m 770 -p ./experiments/$JOB_ID
 mkdir -m 770 -p ./experiments/$JOB_ID/outputLogs

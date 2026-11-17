@@ -13,6 +13,8 @@ def parse_arguments():
     parser.add_argument('--docker', action='store_true', help='Run in Docker mode')
     parser.add_argument('--report-only', action='store_true',
                         help='Only build the joint report: languages are not required')
+    parser.add_argument('--clean-results', action='store_true',
+                        help='Borrar results/ y reports/ de evaluation_folder antes de evaluar')
 
     return parser.parse_args()
 
@@ -21,6 +23,16 @@ def gold_folders(config):
     """evaluation_folder_gold admite una ruta o una lista de rutas."""
     gold = config['evaluation']['evaluation_folder_gold']
     return [gold] if isinstance(gold, str) else list(gold)
+
+def check_clean_results(config):
+    """Antes de permitir el borrado, comprueba que evaluation_folder es una carpeta segura."""
+    ef = os.path.realpath(config['evaluation']['evaluation_folder'])
+    if not os.path.isdir(ef) or len(Path(ef).parts) < 5:
+        raise ValueError(f"--clean-results: evaluation_folder no parece una carpeta de experimento: {ef}")
+    for g in gold_folders(config):
+        rg = os.path.realpath(g)
+        if rg == ef or rg.startswith(ef + os.sep) or ef.startswith(rg + os.sep):
+            raise ValueError(f"--clean-results: evaluation_folder coincide con una carpeta gold o la contiene: {g}")
 
 def read_config(config_path):
     with open(config_path, 'r') as file:
@@ -31,7 +43,7 @@ def sanitize_filename(name):
     return re.sub(r'[^a-zA-Z0-9_-]', '_', name)
 
 
-def generate_env_file(config, env_id, docker_mode):
+def generate_env_file(config, env_id, docker_mode, clean_results=False):
 
     
     # Use evaluation_name for the experiment name
@@ -59,7 +71,8 @@ def generate_env_file(config, env_id, docker_mode):
         f"OUTPUT_DIR={output_dir}",
         f"SRC_LANGUAGE={config['evaluation'].get('src_language','')}",
         f"TGT_LANGUAGE={config['evaluation'].get('tgt_language','')}",
-        f"PROMPT_STYLE={config['evaluation'].get('prompt_style','')}"
+        f"PROMPT_STYLE={config['evaluation'].get('prompt_style','')}",
+        f"CLEAN_RESULTS={'True' if clean_results else 'False'}"
     ]
     
     # Write the env file
@@ -222,10 +235,12 @@ def main():
 
     print("Docker mode:", docker_mode)
     check_config(config,docker_mode,args.report_only)
+    if args.clean_results:
+        check_clean_results(config)
     print(f"Generating environment file for: {config['evaluation_name']}")
     
     # Generate environment file from config
-    env_file = generate_env_file(config, env_id,docker_mode)
+    env_file = generate_env_file(config, env_id,docker_mode,args.clean_results)
     
     print(f"Environment file created: {env_file}")
     print(f"You can now run: bash launch_job.sh {env_file}")
