@@ -24,6 +24,7 @@ from .flores_plus_devtest.task import *
 from .phrases2_ca.task import *
 from .phrases2_es.task import *
 from .news_va.task import *
+from .anotaciones.task import *
 from .perturbations.task import *
 from .geneval_single.task import *
 from .geneval_contextual.task import *
